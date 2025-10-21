@@ -144,4 +144,4 @@ def fetch_instructions(prompt_name: str) -> str:
         return f.read()
 
 if __name__ == "__main__":
-    mcp.run(transport='sse')
+    mcp.run(transport='streamable-http')
