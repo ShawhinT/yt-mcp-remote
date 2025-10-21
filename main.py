@@ -41,7 +41,46 @@ mcp = FastMCP(
     ),
 )
 
-# Create tool
+# ChatGPT-required tools (minimal stubs for testing)
+@mcp.tool()
+def search(query: str) -> dict:
+    """
+    Search for content (stub for ChatGPT compatibility testing)
+
+    Args:
+        query (str): Search query
+
+    Returns:
+        dict: Search results with id, title, url
+    """
+    return {
+        "results": [{
+            "id": "test-123",
+            "title": "Test Video Result",
+            "url": "https://youtube.com/watch?v=test-123"
+        }]
+    }
+
+@mcp.tool()
+def fetch(id: str) -> dict:
+    """
+    Fetch content by ID (stub for ChatGPT compatibility testing)
+
+    Args:
+        id (str): Content ID
+
+    Returns:
+        dict: Content with id, title, text, url, metadata
+    """
+    return {
+        "id": id,
+        "title": f"Test Document {id}",
+        "text": "This is test content for troubleshooting ChatGPT connection.",
+        "url": f"https://example.com/{id}",
+        "metadata": {"source": "test"}
+    }
+
+# Original tools (keeping for backwards compatibility)
 @mcp.tool()
 def fetch_video_transcript(url: str) -> str:
     """
