@@ -8,3 +8,9 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Mac
+.DS_Store
+
+# llm files
+.llm/
