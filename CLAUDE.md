@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a YouTube MCP (Model Context Protocol) remote server that provides tools for extracting and working with YouTube video transcripts. It runs as an HTTP-accessible MCP server using FastMCP and is designed to be consumed by MCP clients remotely.
+This is a YouTube MCP (Model Context Protocol) remote server that provides tools for extracting and working with YouTube video transcripts. It runs as an HTTP-accessible MCP server using FastMCP with OAuth authentication and is designed to be consumed by MCP clients remotely (including ChatGPT).
 
 ## Development Setup
 
@@ -18,7 +18,7 @@ uv sync
 uv run python main.py
 ```
 
-The server runs on `0.0.0.0:8000` using `streamable-http` transport for remote access.
+The server runs on `0.0.0.0:8000` using SSE (Server-Sent Events) transport at the `/sse` mount path.
 
 ## Architecture
 
@@ -26,8 +26,27 @@ The server runs on `0.0.0.0:8000` using `streamable-http` transport for remote a
 
 **main.py** - Single-file server implementation containing:
 - MCP server initialization with FastMCP
+- Auth0 OAuth authentication configuration
 - Server instructions loaded from `prompts/server_instructions.md`
 - Two MCP tools exposed to clients
+
+**utils/auth.py** - Auth0 token verification module:
+- `Auth0TokenVerifier`: Verifies JWT tokens using Auth0's JWKS
+- Validates token signature, issuer, audience, and expiration
+- Caches JWKS to minimize Auth0 API calls
+- Returns `AccessToken` with user info and scopes
+
+### Authentication
+
+The server uses OAuth 2.0 with Auth0:
+- JWT tokens verified using RS256 algorithm
+- Tokens fetched from Auth0's JWKS endpoint (`https://{domain}/.well-known/jwks.json`)
+- Required environment variables (in `.env`):
+  - `AUTH0_DOMAIN`: Auth0 tenant domain
+  - `AUTH0_AUDIENCE`: API identifier from Auth0 dashboard
+  - `RESOURCE_SERVER_URL`: Server's public URL (for OAuth flow)
+
+Scopes are currently disabled (`required_scopes=[]`) for testing purposes.
 
 ### MCP Tools
 
@@ -58,7 +77,8 @@ These prompts define strict content structures (e.g., blog sections must be 2 pa
 
 - **Host**: `0.0.0.0` (accessible remotely)
 - **Port**: `8000`
-- **Transport**: `streamable-http`
+- **Transport**: `sse` (Server-Sent Events)
+- **Mount Path**: `/sse`
 - **Logging**: MCP INFO logs suppressed to WARNING level to reduce console noise
 
 ## Key Implementation Details
@@ -67,3 +87,4 @@ These prompts define strict content structures (e.g., blog sections must be 2 pa
 - Transcript timestamps are converted from seconds to `MM:SS` format for readability
 - Error handling wraps YouTube API exceptions with descriptive messages
 - The server uses FastMCP's decorator pattern (`@mcp.tool()`) for tool registration
+- Auth0 JWT verification happens on every request via the `Auth0TokenVerifier`
