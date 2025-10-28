@@ -1,5 +1,7 @@
 from mcp.server.fastmcp import FastMCP
+from mcp.server.auth.settings import AuthSettings
 from youtube_transcript_api import YouTubeTranscriptApi
+from pydantic import AnyHttpUrl
 from dotenv import load_dotenv
 import re
 import os
@@ -11,16 +13,38 @@ load_dotenv()
 import logging
 logging.getLogger("mcp").setLevel(logging.WARNING)
 
+# Import Auth0 token verifier
+from utils.auth import create_auth0_verifier
+
 # Load server instructions
 with open("prompts/server_instructions.md", "r") as file:
     server_instructions = file.read()
 
-# Create an MCP server (no authentication)
+# Initialize Auth0 token verifier
+token_verifier = create_auth0_verifier()
+
+# Get Auth0 configuration from environment
+auth0_domain = os.getenv("AUTH0_DOMAIN")
+resource_server_url = os.getenv("RESOURCE_SERVER_URL")
+
+if not auth0_domain:
+    raise ValueError("AUTH0_DOMAIN environment variable is required")
+if not resource_server_url:
+    raise ValueError("RESOURCE_SERVER_URL environment variable is required")
+
+# Create an MCP server with OAuth authentication
 mcp = FastMCP(
     "yt-mcp",
     instructions=server_instructions,
     host="0.0.0.0",
     port=8000,
+    # OAuth Configuration
+    token_verifier=token_verifier,
+    auth=AuthSettings(
+        issuer_url=AnyHttpUrl(f"https://{auth0_domain}/"),
+        resource_server_url=AnyHttpUrl(resource_server_url),
+        required_scopes=[],  # No required scopes for now
+    ),
 )
 
 @mcp.tool()
