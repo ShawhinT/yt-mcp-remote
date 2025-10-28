@@ -25,7 +25,7 @@ token_verifier = create_auth0_verifier()
 
 # Get Auth0 configuration from environment
 auth0_domain = os.getenv("AUTH0_DOMAIN")
-resource_server_url = os.getenv("RESOURCE_SERVER_URL", "http://localhost:8000")
+auth0_audience = os.getenv("AUTH0_AUDIENCE", "http://localhost:8000")
 
 # Create an MCP server with OAuth authentication
 mcp = FastMCP(
@@ -33,13 +33,11 @@ mcp = FastMCP(
     instructions=server_instructions,
     host="0.0.0.0",
     port=8000,
-    mount_path="/",
-    sse_path="/sse",
     token_verifier=token_verifier,
     auth=AuthSettings(
         issuer_url=AnyHttpUrl(f"https://{auth0_domain}/"),
-        resource_server_url=AnyHttpUrl(resource_server_url),
-        required_scopes=[],  # Temporarily disabled for testing
+        resource_server_url=AnyHttpUrl(auth0_audience),
+        required_scopes=["mcp:invoke"],  # Require mcp:invoke scope for tool access
     ),
 )
 
