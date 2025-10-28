@@ -53,6 +53,11 @@ class Auth0TokenVerifier(TokenVerifier):
             elif "permissions" in payload:
                 scopes = payload["permissions"]
 
+            # Validate required scope
+            if "mcp:access" not in scopes:
+                print(f"Token missing required 'mcp:access' scope. Token scopes: {scopes}")
+                return None
+
             # Return AccessToken model
             return AccessToken(
                 token=token,
