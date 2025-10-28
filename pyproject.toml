@@ -9,6 +9,6 @@ dependencies = [
     "mcp[cli]>=1.18.0",
     "pydantic>=2.12.3",
     "python-dotenv>=1.1.1",
-    "python-jose[cryptography]>=3.5.0",
+    "pyjwt[crypto]>=2.8.0",
     "youtube-transcript-api>=1.2.3",
 ]

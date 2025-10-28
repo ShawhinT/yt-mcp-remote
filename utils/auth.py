@@ -7,8 +7,8 @@ unauthorized access. It verifies JWT tokens issued by Auth0.
 
 import os
 from typing import Optional
-import httpx
-from jose import jwt, JWTError
+import jwt
+from jwt import PyJWKClient, DecodeError, InvalidTokenError
 from mcp.server.auth.provider import AccessToken, TokenVerifier
 
 
@@ -41,38 +41,15 @@ class Auth0TokenVerifier(TokenVerifier):
         self.algorithms = algorithms or ["RS256"]
         self.jwks_url = f"https://{domain}/.well-known/jwks.json"
         self.issuer = f"https://{domain}/"
-        self._jwks_cache: Optional[dict] = None
-
-    async def _get_jwks(self) -> dict:
-        """
-        Fetch Auth0's JSON Web Key Set (JWKS) for token verification.
-
-        The JWKS contains Auth0's public signing keys used to verify JWT signatures.
-        Results are cached to minimize requests to Auth0.
-
-        Returns:
-            Dictionary containing Auth0's public signing keys
-
-        Raises:
-            httpx.HTTPError: If fetching JWKS fails
-        """
-        # Return cached JWKS if available
-        if self._jwks_cache is not None:
-            return self._jwks_cache
-
-        # Fetch JWKS from Auth0
-        async with httpx.AsyncClient() as client:
-            response = await client.get(self.jwks_url, timeout=10.0)
-            response.raise_for_status()
-            self._jwks_cache = response.json()
-            return self._jwks_cache
+        # PyJWKClient automatically handles JWKS fetching and caching
+        self._jwks_client = PyJWKClient(self.jwks_url, cache_keys=True)
 
     async def verify_token(self, token: str) -> AccessToken | None:
         """
         Verify Auth0 JWT token and return access information.
 
         This method:
-        1. Fetches Auth0's public keys (JWKS)
+        1. Uses PyJWKClient to automatically fetch the correct signing key
         2. Decodes and verifies the JWT token signature
         3. Validates token claims (issuer, audience, expiration)
         4. Extracts user information and scopes
@@ -89,18 +66,22 @@ class Auth0TokenVerifier(TokenVerifier):
                                   ↑ This token gets verified
         """
         try:
-            # Get Auth0's public signing keys
-            jwks = await self._get_jwks()
+            # Get the signing key from Auth0's JWKS
+            # PyJWKClient automatically:
+            # - Fetches JWKS from Auth0
+            # - Finds the key matching the token's 'kid' header
+            # - Caches keys for performance
+            signing_key = self._jwks_client.get_signing_key_from_jwt(token)
 
             # Decode and verify the JWT token
             # This automatically verifies:
-            # - Signature is valid (using Auth0's public keys)
+            # - Signature is valid (using Auth0's public key)
             # - Token hasn't expired
             # - Issuer is Auth0
             # - Audience matches your API
             payload = jwt.decode(
                 token,
-                jwks,
+                signing_key.key,
                 algorithms=self.algorithms,
                 audience=self.audience,
                 issuer=self.issuer,
@@ -135,18 +116,13 @@ class Auth0TokenVerifier(TokenVerifier):
                 # - permissions: List of permissions
             )
 
-        except JWTError as e:
+        except (DecodeError, InvalidTokenError) as e:
             # Token is invalid (expired, wrong signature, wrong audience, etc.)
             print(f"JWT verification failed: {e}")
             return None
 
-        except httpx.HTTPError as e:
-            # Failed to fetch JWKS from Auth0
-            print(f"Failed to fetch JWKS: {e}")
-            return None
-
         except Exception as e:
-            # Catch-all for other errors
+            # Catch-all for other errors (including JWKS fetch failures)
             print(f"Token verification error: {e}")
             return None
 
