@@ -1,23 +1,17 @@
+import re
+import os
+
 from mcp.server.fastmcp import FastMCP
 from mcp.server.auth.settings import AuthSettings
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api.proxies import GenericProxyConfig
 from pydantic import AnyHttpUrl
 from dotenv import load_dotenv
-from starlette.responses import JSONResponse
-from starlette.requests import Request
-import re
-import os
+
+from utils.auth import create_auth0_verifier
 
 # Load environment variables from .env file
 load_dotenv()
-
-# Suppress MCP INFO logs to reduce console output
-import logging
-logging.getLogger("mcp").setLevel(logging.WARNING)
-
-# Import Auth0 token verifier
-from utils.auth import create_auth0_verifier
 
 # Load server instructions
 with open("prompts/server_instructions.md", "r") as file:
@@ -50,28 +44,6 @@ mcp = FastMCP(
         required_scopes=["openid", "profile", "email", "address", "phone", "offline_access"],
     ),
 )
-
-# # Custom route to serve OAuth metadata at root .well-known path
-# # This provides compatibility with clients that check the root path first
-# # before checking the RFC 9728 path-based endpoint
-# @mcp.custom_route("/.well-known/oauth-protected-resource", methods=["GET"])
-# async def oauth_metadata_root(request: Request):
-#     """
-#     Serve OAuth 2.0 Protected Resource Metadata at the root .well-known path.
-
-#     This endpoint ensures compatibility with MCP clients (like ChatGPT/Claude)
-#     that may check the root metadata path before using the RFC 9728 path-based
-#     endpoint at /.well-known/oauth-protected-resource/mcp.
-
-#     The empty scopes_supported array indicates that no MCP-specific scopes
-#     are required - any valid token from the authorization server is accepted.
-#     """
-#     return JSONResponse({
-#         "resource": resource_server_url,
-#         "authorization_servers": [f"https://{auth0_domain}/"],
-#         "bearer_methods_supported": ["header"],
-#         "scopes_supported": []
-#     })
 
 @mcp.tool()
 def fetch_video_transcript(url: str) -> str:
