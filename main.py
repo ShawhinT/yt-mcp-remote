@@ -46,6 +46,7 @@ mcp = FastMCP(
     auth=AuthSettings(
         issuer_url=AnyHttpUrl(f"https://{auth0_domain}/"),
         resource_server_url=AnyHttpUrl(resource_server_url),
+        required_scopes=[],
     ),
 )
 
