@@ -38,6 +38,7 @@ mcp = FastMCP(
     instructions=server_instructions,
     host="0.0.0.0",
     port=8000,
+    streamable_http_path="/mcp",
     # OAuth Configuration
     token_verifier=token_verifier,
     auth=AuthSettings(
@@ -109,4 +110,4 @@ def fetch_instructions(prompt_name: str) -> str:
         return f.read()
 
 if __name__ == "__main__":
-    mcp.run(transport='sse')
+    mcp.run(transport='streamable-http')
