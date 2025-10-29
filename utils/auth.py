@@ -46,19 +46,14 @@ class Auth0TokenVerifier(TokenVerifier):
                 }
             )
 
-            # Extract scopes from token
+            # Extract scopes from token (optional; no enforcement)
             scopes = []
             if "scope" in payload:
                 scopes = payload["scope"].split()
             elif "permissions" in payload:
                 scopes = payload["permissions"]
 
-            # Validate required scope
-            if "mcp:access" not in scopes:
-                print(f"Token missing required 'mcp:access' scope. Token scopes: {scopes}")
-                return None
-
-            # Return AccessToken model
+            # Return AccessToken model (issuer/audience already validated)
             return AccessToken(
                 token=token,
                 client_id=payload.get("azp") or payload.get("client_id", "unknown"),

@@ -1,15 +1,15 @@
-# Auth0 API Scope Configuration
+# Auth0 API Scope Configuration (Deprecated for this server)
 
-This guide walks through configuring the required `mcp:access` scope/permission in Auth0 for the YouTube MCP server.
+This server now accepts tokens based on issuer and audience only. You do not need to configure an `mcp:access` scope/permission.
 
-## Why This Is Needed
+## Current Behavior
 
-The MCP server now requires the `mcp:access` permission to fix the OAuth audience mismatch issue. When ChatGPT requests this scope:
+The MCP server validates only:
 
-1. Auth0 knows to issue an **API access token** (not just a userinfo token)
-2. The token will have the correct audience: `https://yt-mcp-remote-production.up.railway.app`
-3. The token will include `mcp:access` in the `scope` or `permissions` claim
-4. The server validates the scope before allowing access
+1. Issuer: your Auth0 tenant domain
+2. Audience: `https://yt-mcp-remote-production.up.railway.app`
+
+`scope`/`permissions` claims are optional and used only for logging.
 
 ## Auth0 Dashboard Configuration
 
@@ -20,13 +20,9 @@ The MCP server now requires the `mcp:access` permission to fix the OAuth audienc
 3. Find and click on your API:
    - **Identifier**: `https://yt-mcp-remote-production.up.railway.app`
 
-### Step 2: Add the Permission
+### Step 2: (Optional) Permissions
 
-1. Click on the **Permissions** tab
-2. In the "Add Permission" section:
-   - **Permission (Scope)**: `mcp:access`
-   - **Description**: `Access MCP server tools and resources`
-3. Click **Add** or **Save**
+You may skip adding `mcp:access`. If you later reintroduce granular permissions, add them here and update the server accordingly.
 
 ### Step 3: Verify Configuration
 
@@ -107,17 +103,16 @@ ChatGPT is requesting permission to:
 curl -s http://localhost:8000/.well-known/oauth-protected-resource
 ```
 
-Should return:
+Should return (note: `scopes_supported` may be empty or omitted):
 ```json
 {
   "resource": "https://yt-mcp-remote-production.up.railway.app/",
   "authorization_servers": ["https://dev-x1k2ea1lh5dffa3a.us.auth0.com/"],
-  "scopes_supported": ["mcp:access"],
+  "scopes_supported": [],
   "bearer_methods_supported": ["header"]
 }
 ```
-
-Note: `scopes_supported` should now include `["mcp:access"]`.
+Note: `scopes_supported` may be omitted entirely.
 
 ### Test 2: Manual OAuth Flow
 
@@ -127,7 +122,7 @@ https://dev-x1k2ea1lh5dffa3a.us.auth0.com/authorize?
   response_type=code
   &client_id=<YOUR_CLIENT_ID>
   &redirect_uri=<YOUR_REDIRECT_URI>
-  &scope=openid profile email mcp:access
+  &scope=openid profile email
   &audience=https://yt-mcp-remote-production.up.railway.app
 ```
 
@@ -135,7 +130,7 @@ https://dev-x1k2ea1lh5dffa3a.us.auth0.com/authorize?
 
 3. Decode the JWT token (use jwt.io):
    - Check `aud` claim: Should be `https://yt-mcp-remote-production.up.railway.app`
-   - Check `scope` or `permissions`: Should include `mcp:access`
+   - `scope`/`permissions` claims are optional
 
 ### Test 3: Monitor Auth0 Logs
 
@@ -166,23 +161,18 @@ Look for successful token exchange events (`seacft`) with:
 ### Issue: Token still has wrong audience
 
 **Solution**:
-- Verify ChatGPT is requesting the `mcp:access` scope
-- Check Auth0 logs to see what scope was requested
 - Ensure the API identifier exactly matches your environment variable
+- If the client cannot pass `audience`, set Default Audience to your API identifier
 
 ### Issue: "Insufficient scope" error
 
 **Solution**:
-- User may have denied the permission during consent
-- Revoke and re-authorize in ChatGPT
-- Check user's granted consents in Auth0 dashboard
+- Scopes are not required with this server configuration. Ensure the server changes are deployed.
 
 ### Issue: Permission not appearing in token
 
 **Solution**:
-- Enable "Add Permissions in the Access Token" in API RBAC settings
-- Auth0 uses `permissions` claim (array) instead of `scope` (space-separated string)
-- The token verifier checks both: `payload["scope"].split()` and `payload["permissions"]`
+- Not required for this server configuration.
 
 ## Additional Scopes (Future Enhancement)
 
@@ -194,10 +184,10 @@ mcp:write:chapters     - Generate video chapters
 mcp:admin              - Administrative access
 ```
 
-Update both:
-1. Auth0 API Permissions
-2. Server `required_scopes` in `main.py`
-3. Token verifier validation logic in `utils/auth.py`
+If you reintroduce scopes later:
+1. Add Auth0 API Permissions
+2. Re-add `required_scopes` in `main.py`
+3. Reinstate scope validation in `utils/auth.py`
 
 ## References
 
