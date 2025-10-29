@@ -60,11 +60,15 @@ async def oauth_metadata_root(request: Request):
     This endpoint ensures compatibility with MCP clients (like ChatGPT/Claude)
     that may check the root metadata path before using the RFC 9728 path-based
     endpoint at /.well-known/oauth-protected-resource/mcp.
+
+    The empty scopes_supported array indicates that no MCP-specific scopes
+    are required - any valid token from the authorization server is accepted.
     """
     return JSONResponse({
         "resource": resource_server_url,
         "authorization_servers": [f"https://{auth0_domain}/"],
-        "bearer_methods_supported": ["header"]
+        "bearer_methods_supported": ["header"],
+        "scopes_supported": []
     })
 
 @mcp.tool()
