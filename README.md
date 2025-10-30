@@ -1,9 +1,9 @@
 # (Remote) YouTube MCP Server
 
-A remote MCP (Model Context Protocol) server that provides YouTube video transcript extraction tools with OAuth authentication. It includes OAuth 2.0 authentication via Auth0 compatible with MCP clients for including ChatGPT and Claude.
+A remote MCP (Model Context Protocol) server that provides YouTube video transcript extraction tools with OAuth authentication. It includes OAuth 2.0 authentication via Auth0, compatible with MCP clients for including ChatGPT and Claude.
 
 Resources
-- [Blog Post]
+- [Blog Post](https://shawhin.medium.com/how-to-build-custom-mcp-servers-for-chatgpt-1f1823f3b7b8)
 - [YouTube Video]
 
 ## Quick Start
