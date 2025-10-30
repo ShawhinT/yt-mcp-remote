@@ -18,7 +18,7 @@ uv sync
 uv run python main.py
 ```
 
-The server runs on `0.0.0.0:8000` using SSE (Server-Sent Events) transport at the `/sse` mount path.
+The server runs on `0.0.0.0` using `streamable-http` transport.
 
 ## Architecture
 
@@ -39,14 +39,32 @@ The server runs on `0.0.0.0:8000` using SSE (Server-Sent Events) transport at th
 ### Authentication
 
 The server uses OAuth 2.0 with Auth0:
-- JWT tokens verified using RS256 algorithm
+- JWT tokens verified using RS256 algorithm (configurable via `AUTH0_ALGORITHMS`)
 - Tokens fetched from Auth0's JWKS endpoint (`https://{domain}/.well-known/jwks.json`)
 - Required environment variables (in `.env`):
   - `AUTH0_DOMAIN`: Auth0 tenant domain
   - `AUTH0_AUDIENCE`: API identifier from Auth0 dashboard
   - `RESOURCE_SERVER_URL`: Server's public URL (for OAuth flow)
+  - `AUTH0_ALGORITHMS` (optional): JWT algorithm, defaults to "RS256"
 
-Scopes are currently disabled (`required_scopes=[]`) for testing purposes.
+The server requires the following OAuth scopes:
+- `openid`
+- `profile`
+- `email`
+- `address`
+- `phone`
+- `offline_access`
+
+### Proxy Configuration
+
+The server requires proxy credentials to fetch YouTube transcripts:
+- Uses `youtube-transcript-api` with proxy support via `GenericProxyConfig`
+- Required environment variables:
+  - `PROXY_USERNAME`: Proxy authentication username
+  - `PROXY_PASSWORD`: Proxy authentication password
+  - `PROXY_URL`: Proxy server URL (format: `hostname:port`)
+
+If proxy credentials are not configured, transcript fetching will fail with an error message.
 
 ### MCP Tools
 
@@ -76,10 +94,7 @@ These prompts define strict content structures (e.g., blog sections must be 2 pa
 ## Server Configuration
 
 - **Host**: `0.0.0.0` (accessible remotely)
-- **Port**: `8000`
-- **Transport**: `sse` (Server-Sent Events)
-- **Mount Path**: `/sse`
-- **Logging**: MCP INFO logs suppressed to WARNING level to reduce console noise
+- **Transport**: `streamable-http`
 
 ## Key Implementation Details
 

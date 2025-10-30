@@ -13,13 +13,6 @@ from utils.auth import create_auth0_verifier
 # Load environment variables from .env file
 load_dotenv()
 
-# Load server instructions
-with open("prompts/server_instructions.md", "r") as file:
-    server_instructions = file.read()
-
-# Initialize Auth0 token verifier
-token_verifier = create_auth0_verifier()
-
 # Get Auth0 configuration from environment
 auth0_domain = os.getenv("AUTH0_DOMAIN")
 resource_server_url = os.getenv("RESOURCE_SERVER_URL")
@@ -29,12 +22,18 @@ if not auth0_domain:
 if not resource_server_url:
     raise ValueError("RESOURCE_SERVER_URL environment variable is required")
 
+# Load server instructions
+with open("prompts/server_instructions.md", "r") as file:
+    server_instructions = file.read()
+
+# Initialize Auth0 token verifier
+token_verifier = create_auth0_verifier()
+
 # Create an MCP server with OAuth authentication
 mcp = FastMCP(
     "yt-mcp",
     instructions=server_instructions,
     host="0.0.0.0",
-    # streamable_http_path="/mcp",
     # OAuth Configuration
     token_verifier=token_verifier,
     auth=AuthSettings(
