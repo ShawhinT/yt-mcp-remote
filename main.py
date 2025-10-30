@@ -34,8 +34,7 @@ mcp = FastMCP(
     "yt-mcp",
     instructions=server_instructions,
     host="0.0.0.0",
-    # port=8000,
-    streamable_http_path="/mcp",
+    # streamable_http_path="/mcp",
     # OAuth Configuration
     token_verifier=token_verifier,
     auth=AuthSettings(
