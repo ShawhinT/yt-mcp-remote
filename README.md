@@ -4,7 +4,7 @@ A remote MCP (Model Context Protocol) server that provides YouTube video transcr
 
 Resources
 - [Blog Post](https://shawhin.medium.com/how-to-build-custom-mcp-servers-for-chatgpt-1f1823f3b7b8)
-- [YouTube Video]
+- [YouTube Video](https://youtu.be/XEMZniYKuaY)
 
 ## Quick Start
 
